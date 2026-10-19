@@ -5,11 +5,11 @@ This repo holds the five category templates signed off so far, the link format, 
 
 | Code | Category | Layout family | Exhibit |
 |---|---|---|---|
-| C01 | Revenue mix | Standard (workbook "Example page") | 8-quarter table |
-| C02 | Margins and what moves them | Exhibit first | Line chart, three series, spread shaded |
-| C05 | Capex and committed spend | Two exhibits, two as-of dates | Capex table, then commitments bar |
-| C07 | Legal and regulatory docket | List, no figures strip | Matter register |
-| C10 | Peer ranking and rotation | Comparison, exhibit-led | Ranking matrix plus tracked peer links |
+| C01 | Revenue Mix | Standard (workbook "Example page") | 8-quarter table |
+| C02 | Margins and What Moves Them | Exhibit first | Line chart, three series, spread shaded |
+| C05 | Capex and Committed Spend | Two exhibits, two as-of dates | Capex table, then commitments bar |
+| C07 | Legal and Regulatory Docket | List, no figures strip | Matter register |
+| C10 | Peer Ranking and Rotation | Comparison, exhibit-led | Ranking matrix plus tracked peer links |
 
 Sources of truth: *Readership Signals: Live Project Document* (13 Oct 2026), *Parent Page Templates*
 (Kartik, 15 Oct 2026) and the v2 workbook (*Core topics*, *Apple v2*, *Example page* tabs).

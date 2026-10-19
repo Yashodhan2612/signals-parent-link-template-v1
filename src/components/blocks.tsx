@@ -12,8 +12,21 @@ export const fmtDate = (iso: string) =>
     .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
     .replaceAll(" ", "\u00a0");
 
-/** First letter of every word capitalised ("Last Eight Quarters"). Other letters are left as written. Applied to every exhibit and table heading, so all templates share one nomenclature. */
-export const titleCase = (s: string) => s.replace(/(^|\s)(\p{L})/gu, (_, sp: string, ch: string) => sp + ch.toUpperCase());
+/** Words kept lowercase inside a heading, unless first: articles, short conjunctions and short prepositions. */
+const SMALL_WORDS = new Set("a an and as at but by for in nor of on or per so the to up via vs yet".split(" "));
+
+/**
+ * Title Case for exhibit and table headings: "Contracted but Unspent Commitments by Due Period, as of Oct 3, 2026".
+ * The first word and every major word start with a capital; small words (SMALL_WORDS) stay lowercase.
+ * Acronyms and labels already in capitals ("FCF", "R&D", "Exhibit A") and units such as "($m)" are left alone.
+ * One rule for every template, applied in the shared Exhibit and DataTable components.
+ */
+export const titleCase = (s: string) =>
+  s.replace(/(^|\s)(\p{L}[\p{L}\p{N}'’]*)/gu, (_, sp: string, w: string, offset: number) => {
+    if (w === w.toUpperCase()) return sp + w;
+    if (offset > 0 && SMALL_WORDS.has(w.toLowerCase())) return sp + w.toLowerCase();
+    return sp + w[0].toUpperCase() + w.slice(1);
+  });
 
 /* ---------------------------------------------------------------------------------- 1 */
 
