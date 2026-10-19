@@ -6,8 +6,14 @@
 import type { ReactNode } from "react";
 import type { Figure, Source } from "@/content/types";
 
+/** "Oct 19, 2026". Non-breaking spaces keep a date on one line when a meta line wraps. */
 export const fmtDate = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  new Date(`${iso}T00:00:00Z`)
+    .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
+    .replaceAll(" ", "\u00a0");
+
+/** First letter of every word capitalised ("Last Eight Quarters"). Other letters are left as written. */
+export const titleCase = (s: string) => s.replace(/(^|\s)(\p{L})/gu, (_, sp: string, ch: string) => sp + ch.toUpperCase());
 
 /* ---------------------------------------------------------------------------------- 1 */
 
@@ -42,8 +48,9 @@ export function FiguresStrip({ figures }: { figures: LabelledFigure[] }) {
   return (
     <section aria-label="The figures" className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line sm:auto-cols-fr sm:grid-flow-col">
       {figures.map((f) => (
-        <div key={f.label} className="bg-card p-3">
-          <p className="text-[11px] leading-snug text-muted">{f.label}</p>
+        <div key={f.label} className="flex flex-col bg-card p-3">
+          {/* flex-1 lets the label take the spare height, so values and periods line up across cells however many lines a label wraps to. */}
+          <p className="flex-1 text-[11px] leading-snug text-muted">{f.label}</p>
           <p className="tnum mt-1 text-lg font-semibold">{f.value}</p>
           <p className="text-[11px] text-muted-2">
             {f.period} · <a href={`#source-${f.source + 1}`}>[{f.source + 1}]</a>

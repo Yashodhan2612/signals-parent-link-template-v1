@@ -1,6 +1,6 @@
 import { CATEGORIES } from "@/content/taxonomy";
 import type { C01Content } from "@/content/types";
-import { DataTable, Exhibit, FiguresStrip, GapNote, HowToRead, partition, Provenance, TitleBlock, WhatItShows, fmtDate } from "@/components/blocks";
+import { DataTable, Exhibit, FiguresStrip, GapNote, HowToRead, partition, Provenance, TitleBlock, WhatItShows, fmtDate, titleCase } from "@/components/blocks";
 
 /**
  * C01 Revenue mix. Standard layout, exactly as the workbook "Example page":
@@ -17,9 +17,9 @@ export function C01({ page }: { page: C01Content }) {
     <>
       <TitleBlock title={cat.title} promise={page.promise} meta={stamps} />
       <FiguresStrip figures={shown} />
-      <Exhibit title={`Last eight quarters, as of ${fmtDate(page.asOf)}`} note={<GapNote missing={[...missing, ...droppedQuarters]} />}>
+      <Exhibit title={titleCase(`Last eight quarters, as of ${fmtDate(page.asOf)}`)} note={<GapNote missing={[...missing, ...droppedQuarters]} />}>
         <DataTable
-          columns={["Quarter", ...page.exhibit.columns]}
+          columns={["Quarter", ...page.exhibit.columns].map(titleCase)}
           rows={rows.map((r) => ({ key: r.quarter, cells: [r.quarter, ...r.cells] }))}
         />
       </Exhibit>
