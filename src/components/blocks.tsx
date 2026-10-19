@@ -12,7 +12,7 @@ export const fmtDate = (iso: string) =>
     .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
     .replaceAll(" ", "\u00a0");
 
-/** First letter of every word capitalised ("Last Eight Quarters"). Other letters are left as written. */
+/** First letter of every word capitalised ("Last Eight Quarters"). Other letters are left as written. Applied to every exhibit and table heading, so all templates share one nomenclature. */
 export const titleCase = (s: string) => s.replace(/(^|\s)(\p{L})/gu, (_, sp: string, ch: string) => sp + ch.toUpperCase());
 
 /* ---------------------------------------------------------------------------------- 1 */
@@ -66,7 +66,7 @@ export function FiguresStrip({ figures }: { figures: LabelledFigure[] }) {
 export function Exhibit({ title, children, note }: { title: ReactNode; children: ReactNode; note?: ReactNode }) {
   return (
     <section aria-label="Exhibit" className="rounded-xl border border-line bg-card p-4 sm:p-5">
-      <h2 className="mb-3 text-sm font-semibold">{title}</h2>
+      <h2 className="mb-3 text-sm font-semibold">{typeof title === "string" ? titleCase(title) : title}</h2>
       {children}
       {note && <div className="mt-3 space-y-1 text-xs text-muted">{note}</div>}
     </section>
@@ -93,7 +93,7 @@ export function DataTable({
           <tr className="border-b border-line-strong text-[11px] uppercase tracking-wide text-muted">
             {columns.map((c) => (
               <th key={c} scope="col" className="py-2 pr-4 font-medium">
-                {c}
+                {titleCase(c)}
               </th>
             ))}
           </tr>
