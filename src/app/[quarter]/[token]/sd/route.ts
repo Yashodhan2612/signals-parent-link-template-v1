@@ -1,7 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { SD_URL } from "@/config/site";
 import { getPage } from "@/lib/data";
-import { recordHit, weeksSince } from "@/lib/hits";
+import { buildHit, recordHit } from "@/lib/hits";
 import { readToken } from "@/lib/links";
 
 /**
@@ -19,19 +19,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ quar
     target.searchParams.set("utm_campaign", link.code);
     const page = await getPage(link.company, link.code);
     const userAgent = request.headers.get("user-agent");
-    if (page) {
-      after(() =>
-        recordHit({
-          ...link,
-          kind: "sd",
-          template: page.template,
-          cluster: page.cluster,
-          weeksSinceChange: weeksSince(page.contentChangedOn),
-          userAgent,
-          at: new Date().toISOString(),
-        }),
-      );
-    }
+    if (page) after(() => recordHit(buildHit("sd", link, page, userAgent)));
   }
   const res = NextResponse.redirect(target, 302);
   res.headers.set("Referrer-Policy", "no-referrer");

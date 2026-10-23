@@ -7,7 +7,7 @@ import { PageShell } from "@/components/PageShell";
 import { SD_URL } from "@/config/site";
 import { CATEGORIES } from "@/content/taxonomy";
 import { getCompany, getPage } from "@/lib/data";
-import { recordHit, weeksSince } from "@/lib/hits";
+import { buildHit, recordHit } from "@/lib/hits";
 import { pagePath, readToken } from "@/lib/links";
 import { Template } from "@/templates";
 
@@ -36,18 +36,11 @@ async function Resolved({ params }: Params) {
   const page = await getPage(link.company, link.code);
   if (!page) notFound(); // dormant topic for this company
 
+  // A page whose data check failed is blocked: it does not publish, so it is not a page and records no hit.
+  if (page.tracking.reconStatus === "Mismatch (blocked)") notFound();
+
   const userAgent = (await headers()).get("user-agent");
-  after(() =>
-    recordHit({
-      ...link,
-      kind: "page",
-      template: page.template,
-      cluster: page.cluster,
-      weeksSinceChange: weeksSince(page.contentChangedOn),
-      userAgent,
-      at: new Date().toISOString(),
-    }),
-  );
+  after(() => recordHit(buildHit("page", link, page, userAgent)));
 
   // C10 rotation links: same issue context, pointing at each peer's own C10 page.
   const company = page.template === "C10" ? await getCompany(link.company) : null;

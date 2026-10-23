@@ -12,7 +12,7 @@ export default function TemplateMenu() {
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
       <h1 className="serif text-4xl">Parent page templates</h1>
       <p className="mt-2 text-sm text-muted">
-        C01, C02, C05, C07 and C10 templates where all company specific content is lorem ipsum.
+        C01 to C11 templates where all company specific content is lorem ipsum.
       </p>
       <Suspense>
         <Menu />
