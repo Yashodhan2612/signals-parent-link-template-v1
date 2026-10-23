@@ -1,18 +1,25 @@
 # Readership Signals: parent page templates (Live)
 
 The parent pages behind the tracked links in BST reports, branded **Greenwich Research News Data**.
-This repo holds the five category templates signed off so far, the link format, and hit capture.
+This repo holds all eleven core category templates (C01 to C11), the link format, and hit capture.
 
 | Code | Category | Layout family | Exhibit |
 |---|---|---|---|
 | C01 | Revenue Mix | Standard (workbook "Example page") | 8-quarter table |
 | C02 | Margins and What Moves Them | Exhibit first | Line chart, three series, spread shaded |
+| C03 | Debt and Balance Sheet | Two exhibits, two as-of dates | Quarterly debt and cash table, then the annual maturity ladder |
+| C04 | Capital Returns and Share Count | Standard | One table, eight quarters, the last column answers the question |
 | C05 | Capex and Committed Spend | Two exhibits, two as-of dates | Capex table, then commitments bar |
+| C06 | Guidance Record | List, no figures strip | Register grouped by quarter, state tag plus movement |
 | C07 | Legal and Regulatory Docket | List, no figures strip | Matter register |
+| C08 | Ownership and Insider Activity | Two exhibits, two as-of dates, phased | Holders table per share class, then the insider log |
+| C09 | Corporate Actions Record | List, no figures strip, phased | 24-month register, fixed six-type list |
 | C10 | Peer Ranking and Rotation | Comparison, exhibit-led | Ranking matrix plus tracked peer links |
+| C11 | Coverage and Attention | Weekly list, generated | Topic table: stories this week against the 12-week median |
 
 Sources of truth: *Readership Signals: Live Project Document* (13 Oct 2026), *Parent Page Templates*
-(Kartik, 15 Oct 2026) and the v2 workbook (*Core topics*, *Apple v2*, *Example page* tabs).
+(Kartik; C01, C02, C05, C07, C10 from the 15 Oct document, C03, C04, C06, C08, C09, C11 from v1.3 of 21 Oct 2026)
+and the v2 workbook (*Core topics*, *Apple v2*, *Example page* tabs).
 **All company-specific content is lorem ipsum.** Every place real content goes is a typed field in
 `src/content/types.ts`.
 
@@ -77,13 +84,20 @@ whatever the link count. `npm run check:tracking` mints and verifies a full quar
   under their own quarter.
 - Set `LINK_SECRET` (long random string) in production and never rotate it: changing it invalidates every
   published link.
-- The link text is the page's `promise`, word for word (templates doc: "the promise line is the label").
+- The report link text is `linkText`: the first four to seven words of the page's `promise`, verbatim (templates v1.3,
+  Block 1). If you change either, change both before launch. `npm run check:content` enforces it.
 
 ### 3. Hit capture into BST-DB (pillar 2)
 - Every page open and StockDashboard click is recorded server-side by `recordHit` (`src/lib/hits.ts`), after the
   response, so it never slows the page and works without JavaScript. Set `HITS_ENDPOINT` to the BST-DB ingestion
   URL; each hit is one JSON POST:
-  `kind, quarter, product, issue, company, code, template, cluster, platform, placement, ref, weeksSinceChange, userAgent, at`.
+  `kind, quarter, product, issue, company, code, template, cluster, platform, placement, ref, weeksSinceChange,
+  templateVersion, dataSnapshotId, reconStatus, reconStatusSetOn, userAgent, at`.
+- `templateVersion`, `dataSnapshotId` and `reconStatus` (with the date it was set) are logged on every click, so a
+  change in clicks can be traced to the page, to the data behind it, or to demand (templates v1.3, Block 0). They
+  come from each page's `tracking` field, which the content agent and the Tech data-check job set.
+- `reconStatus` is `Matched`, `Mismatch (blocked)` or `Not yet checked`. A page at `Mismatch (blocked)` does not
+  publish: it renders no content and records no hit. Only a named analyst can override it, and that is logged.
 - That is enough for every view the doc asks for: per product, quarter, company and category, plus per issue
   and placement.
 - Bot filtering and the suspect flag belong downstream at ingestion (kickoff §9); the user agent is passed
@@ -100,9 +114,9 @@ whatever the link count. `npm run check:tracking` mints and verifies a full quar
 
 ---
 
-## Adding the remaining templates (C03, C04, C06, C08, C09, C11)
+## Adding a template
 1. Add the category to `CATEGORIES` and `TEMPLATE_CODES` in `src/content/taxonomy.ts`.
-2. Add its content type to `src/content/types.ts` (only company-specific fields).
+2. Add its content type to `src/content/types.ts` (only company-specific fields) and to the `PageContent` union.
 3. Add `src/templates/Cxx.tsx` from the shared blocks in `src/components/blocks.tsx`, in the layout family's
    block order, and a case in `src/templates/index.tsx`.
 4. Add lorem content in `src/content/lorem.ts` and its rules in `scripts/check-content.mts`.
@@ -114,10 +128,36 @@ whatever the link count. `npm run check:tracking` mints and verifies a full quar
 - C05 has no single page-level as-of date; each exhibit carries its own in its heading.
 - C07 is headed "confirmed to"; a next-known date that has passed is hidden automatically. Counts in the title
   block are derived from the register.
+- C03: net cash is computed only when every input is present; a quarter without all inputs shows "Not reported" and a
+  column empty in every quarter is left out, with the gap stated under the exhibit. Exhibit A is the carrying
+  amount, Exhibit B the principal, and the page says they are not reconciled.
+- C04: one table, not a chart. The share count is read from the Class A record only for dual-class companies.
+- C06: needs at least two quarters to launch. The state is `Guided`, `Not repeated` or `Declined`; movement is
+  `Raised`, `Lowered`, `Unchanged`, `New` or a dash and is a dash for anything not guided. Ranges are never
+  reduced to a midpoint.
+- C08: one holders table per share class where classes differ. Phase 1 matches plan status by name; phase 2 adds the
+  transaction code column and the click series restarts. A gift never renders as a sale.
+- C09: a fixed six-type list is printed under the register in phase 1. Phase 2 adds the filing item number and type
+  follows it; the series restarts. At least six entries over 24 months or the topic goes dormant.
+- C11: generated from the publishing system, so it has no analyst sign-off line. If a twelve-week median is missing
+  the cell shows a dash and `medianNote` states why.
 - C10: each row carries its own period, the peer median is a table row, and a metric reported by fewer than four
   peers is dropped. It is the only template with links out (tracked rotation).
 - Every parent page carries the StockDashboard section, below the six blocks, with its own tracked link that
   opens in a new tab and passes UTM tags only.
+
+## Launch gates (templates v1.3, "Launch gate" per template)
+These are data and process gates for the pipeline, not code, but each page should stay unpublished until its gate
+clears. Dormant means the topic is simply left out of that company's `links`.
+
+| Template | Gate |
+|---|---|
+| C03 | Blocked on T0, the history fix. Every query filters `period_type = 'Q'` and keys on company id plus market. The debt note must be extractable for every pilot quarter, or net cash is blank across the pilot |
+| C04 | Blocked on T0. Filter `period_type = 'Q'`, de-cumulate year-to-date cash-flow values, and check NVIDIA's January rows against the filing. Run the Peer Story anchor check per company before link text freezes |
+| C06 | Two consecutive quarters of transcripts that include analyst questions (four is the target). The gate is the analyst-question text, not the quarter count |
+| C08 | Settle the Download Center overlap first: one path to insider and holder material. Phase 2 restarts the click series; record the transition date and exclude the changeover |
+| C09 | Confirm the 24-month view is not already printed in the report. Phase 2 restarts the series on the same terms as C08 |
+| C11 | Backfill twelve weeks of topic tags so the median is live on day one. Never show read counts until platform terms permit it |
 
 ## Deploying (Vercel)
 Set these in Project Settings → Environment Variables, then **redeploy**. `SIGNALS_PREVIEW` is read at build

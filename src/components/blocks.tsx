@@ -17,14 +17,17 @@ const SMALL_WORDS = new Set("a an and as at but by for in nor of on or per so th
 
 /**
  * Title Case for exhibit and table headings: "Contracted but Unspent Commitments by Due Period, as of Oct 3, 2026".
- * The first word and every major word start with a capital; small words (SMALL_WORDS) stay lowercase.
- * Acronyms and labels already in capitals ("FCF", "R&D", "Exhibit A") and units such as "($m)" are left alone.
+ * The first word and every major word start with a capital (also after a hyphen: "12-Week Median"); small words
+ * (SMALL_WORDS) stay lowercase, and "vs" is always lowercase. Acronyms and labels already in capitals ("FCF", "R&D", "Exhibit A"), single-letter
+ * units ("USD m") and units glued to a symbol ("($m)") are left alone.
  * One rule for every template, applied in the shared Exhibit and DataTable components.
  */
 export const titleCase = (s: string) =>
-  s.replace(/(^|\s)(\p{L}[\p{L}\p{N}'’]*)/gu, (_, sp: string, w: string, offset: number) => {
+  s.replace(/(^|[\s-])(\p{L}[\p{L}\p{N}'’]*)/gu, (_, sp: string, w: string, offset: number) => {
     if (w === w.toUpperCase()) return sp + w;
+    if (w.toLowerCase() === "vs") return sp + "vs"; // an abbreviation, lowercase even first: "vs Prior Quarter"
     if (offset > 0 && SMALL_WORDS.has(w.toLowerCase())) return sp + w.toLowerCase();
+    if (w.length === 1) return sp + w;
     return sp + w[0].toUpperCase() + w.slice(1);
   });
 
@@ -97,7 +100,8 @@ export function DataTable({
   rows,
 }: {
   columns: string[];
-  rows: { key: string; cells: ReactNode[]; highlight?: boolean; muted?: boolean }[];
+  /** A row with `group` set renders as a full-width sub-heading (for example one per quarter). */
+  rows: { key: string; cells: ReactNode[]; highlight?: boolean; muted?: boolean; group?: string }[];
 }) {
   return (
     <div className="-mx-1 overflow-x-auto px-1">
@@ -112,18 +116,29 @@ export function DataTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr
-              key={r.key}
-              className={`border-b border-line last:border-0 ${r.highlight ? "bg-accent-soft font-semibold" : ""} ${r.muted ? "text-muted" : ""}`}
-            >
-              {r.cells.map((cell, i) => (
-                <td key={i} className="tnum py-2 pr-4 align-top first:whitespace-nowrap">
-                  {cell ?? <span className="text-xs font-normal text-muted-2">Not reported</span>}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {rows.map((r) => {
+            if (r.group !== undefined) {
+              return (
+                <tr key={r.key} className="border-b border-line bg-cream-2">
+                  <th colSpan={columns.length} scope="colgroup" className="py-1.5 text-left text-xs font-semibold text-ink-2">
+                    {r.group}
+                  </th>
+                </tr>
+              );
+            }
+            return (
+              <tr
+                key={r.key}
+                className={`border-b border-line last:border-0 ${r.highlight ? "bg-accent-soft font-semibold" : ""} ${r.muted ? "text-muted" : ""}`}
+              >
+                {r.cells.map((cell, i) => (
+                  <td key={i} className="tnum py-2 pr-4 align-top first:whitespace-nowrap">
+                    {cell ?? <span className="text-xs font-normal text-muted-2">Not reported</span>}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -167,11 +182,14 @@ export function Provenance({
   stamps,
   verifiedBy,
   verifiedOn,
+  note,
 }: {
   sources: Source[];
   stamps: ReactNode[];
-  verifiedBy: string;
-  verifiedOn: string;
+  /** Omitted only where the page has no analyst (C11); `note` then says so. */
+  verifiedBy?: string;
+  verifiedOn?: string;
+  note?: string;
 }) {
   return (
     <footer aria-label="Sources" className="border-t border-line pt-4 text-xs leading-relaxed text-muted">
@@ -183,8 +201,9 @@ export function Provenance({
           </li>
         ))}
       </ol>
+      {note && <p className="mt-1">{note}</p>}
       <p className="mt-2">
-        {[...stamps, `Verified and signed off: ${verifiedBy}, ${fmtDate(verifiedOn)}`].map((s, i) => (
+        {(verifiedBy && verifiedOn ? [...stamps, `Verified and signed off: ${verifiedBy}, ${fmtDate(verifiedOn)}`] : stamps).map((s, i) => (
           <span key={i}>
             {i > 0 && "  ·  "}
             {s}
